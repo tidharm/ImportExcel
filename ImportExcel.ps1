@@ -92,7 +92,7 @@ function Import-Excel {
         if($Range) {
             $TargetRowsCols=ConvertTo-RowCol $Range
 
-            $HeaderRow=$TargetRowsCols.StartRow
+            $HeaderRow=$TargetRowsCols.StartRow-1
             $StartCol=$TargetRowsCols.StartCol-1
             #$Rows=$TargetRowsCols.Rows+1
             $Rows=$TargetRowsCols.Rows+$HeaderRow
@@ -100,6 +100,7 @@ function Import-Excel {
         } else {
             $Rows=$dimension.Rows
             $Columns=$dimension.Columns
+            #$HeaderRow-=1
             $StartCol=0
         }
     
@@ -120,8 +121,7 @@ function Import-Excel {
 
                     [PSCustomObject]$newRow
                 }
-            }
-            else {
+            } else {
                 foreach ($Row in $HeaderRow..($Rows-1)) {
                     $newRow = [Ordered]@{}
                     foreach ($Column in $StartCol..($Columns-1)) {
@@ -132,18 +132,16 @@ function Import-Excel {
                     [PSCustomObject]$newRow
                 }
             }
-        } 
-        else {
+        } else {
             if (!$Header) {
-                $Header = foreach ($Column in 1..$Columns) {
+                $Header = foreach ($Column in $StartCol..$Columns) {
                     $worksheet.Cells[$HeaderRow,$Column].Value
                 }
             }
 
             if ($Rows -eq 1) {
                 $Header | ForEach-Object {$h=[Ordered]@{}} {$h.$_=''} {[PSCustomObject]$h}
-            } 
-            else {
+            } else {
                 if ($DataOnly) {
                     $CellsWithValues = $worksheet.Cells | Where-Object {$_.Value -and ($_.End.Row -ne 1)}
 
@@ -160,8 +158,7 @@ function Import-Excel {
 
                         [PSCustomObject]$newRow
                     }
-                }
-                else {
+                } else {
                     foreach ($Row in ($HeaderRow+1)..$Rows) {
                         $h=[Ordered]@{}
                         foreach ($Column in $StartCol..($Columns-1)) {
